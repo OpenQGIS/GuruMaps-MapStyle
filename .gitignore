@@ -1,1 +1,5 @@
 .DS_Store
+__pycache__/
+*.pyc
+.tile_cache/
+gurumaps_mapcss_docs.txt

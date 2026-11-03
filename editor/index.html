@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Guru Maps 风格可视化工作台 (Style Studio)</title>
+  
+  <!-- MapLibre GL JS & CSS (Local Vendor for 0-latency load) -->
+  <link rel="stylesheet" href="vendor/maplibre-gl.css" />
+  <script src="vendor/maplibre-gl.js"></script>
+
+  <!-- JSZip & FileSaver for Client-side .style.zip generation -->
+  <script src="vendor/jszip.min.js"></script>
+  <script src="vendor/FileSaver.min.js"></script>
+
+  <!-- App Styles -->
+  <link rel="stylesheet" href="styles.css?v=5" />
+</head>
+<body>
+
+  <!-- Left Sidebar: Controls & Palettes -->
+  <aside id="sidebar">
+    <div class="sidebar-header">
+      <div class="brand-title">
+        <span>🗺️ Guru Maps 风格工坊</span>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <nav class="nav-tabs">
+      <button class="nav-tab active" data-tab="tab-palette">🎨 调色盘与预设</button>
+      <button class="nav-tab" data-tab="tab-roads">🛣️ 道路/桥梁/zlinear</button>
+      <button class="nav-tab" data-tab="tab-code">💻 MapCSS 源码</button>
+    </nav>
+
+    <!-- Tab 1: Palette & Presets -->
+    <div class="tab-content active" id="tab-palette">
+      <!-- Presets Bar -->
+      <div class="presets-section">
+        <div class="section-label">
+          <span>🎨 预设风格方案</span>
+        </div>
+        <div class="preset-chips" id="preset-chips-container">
+          <!-- Dynamically populated from presets.js -->
+        </div>
+      </div>
+
+      <!-- Quick Feature Toggles -->
+      <div class="quick-tools-section">
+        <div class="toggle-card" id="toggle-trail-boost" title="高亮非硬化土路与山间徒步小径">
+          <div class="toggle-info">
+            <span class="toggle-title">🥾 徒步小路增强</span>
+            <span class="toggle-desc">加粗 Path/Track 并强化色彩</span>
+          </div>
+        </div>
+        <div class="toggle-card" id="toggle-clean-poi" title="降低城市建筑与杂乱地块干扰，突出自然山水与路网">
+          <div class="toggle-info">
+            <span class="toggle-title">🏙️ 城市降噪模式</span>
+            <span class="toggle-desc">淡化住宅与商业建筑</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Categories & Colors -->
+      <div class="categories-container" id="categories-container">
+        <!-- Dynamically populated from app.js -->
+      </div>
+    </div>
+
+    <!-- Tab 2: Road Structures & zlinear Zoom Curves -->
+    <div class="tab-content" id="tab-roads">
+      <div class="road-structure-container">
+        
+        <!-- Bridge Specifications -->
+        <div class="spec-card">
+          <div class="spec-title">🌉 桥梁立体分层 (Bridge Layer)</div>
+          <p class="spec-desc">针对 OpenStreetMap [bridge] 标签，绘制双侧深色桥栏护栏描边，端点无封口 (linecap: none)。</p>
+          
+          <div class="color-row" style="margin-bottom: 8px;">
+            <div class="color-meta">
+              <span class="color-name">桥梁边框/护栏颜色</span>
+              <span class="color-var">@color_bridge</span>
+            </div>
+            <div class="color-picker-box">
+              <input type="color" class="color-input-native" id="picker-color-bridge" value="#A4A8AB">
+              <input type="text" class="color-hex-text" id="hex-color-bridge" value="#A4A8AB" maxlength="9">
+            </div>
+          </div>
+
+          <div class="slider-group">
+            <div class="slider-header">
+              <span>桥梁边框额外粗细 (casing-width)</span>
+              <span class="slider-val" id="val-bridge-width">1.5 pt</span>
+            </div>
+            <input type="range" class="range-slider" id="slider-bridge-width" min="0.5" max="3.5" step="0.5" value="1.5">
+          </div>
+        </div>
+
+        <!-- Tunnel Specifications -->
+        <div class="spec-card">
+          <div class="spec-title">🚇 隧道立体分层 (Tunnel Layer)</div>
+          <p class="spec-desc">针对 [tunnel] 标签，应用半透明灰度着色与虚线样式 (dashes: 4, 4)，沉底渲染。</p>
+          
+          <div class="color-row" style="margin-bottom: 8px;">
+            <div class="color-meta">
+              <span class="color-name">隧道内壁与路面颜色</span>
+              <span class="color-var">@color_tunnel</span>
+            </div>
+            <div class="color-picker-box">
+              <input type="color" class="color-input-native" id="picker-color-tunnel" value="#D0D0D0">
+              <input type="text" class="color-hex-text" id="hex-color-tunnel" value="#D0D0D0" maxlength="9">
+            </div>
+          </div>
+
+          <div class="slider-group">
+            <div class="slider-header">
+              <span>隧道透明度 (opacity)</span>
+              <span class="slider-val" id="val-tunnel-opacity">60%</span>
+            </div>
+            <input type="range" class="range-slider" id="slider-tunnel-opacity" min="0.2" max="1.0" step="0.05" value="0.6">
+          </div>
+        </div>
+
+        <!-- zlinear Dynamic Zoom Interpolator -->
+        <div class="spec-card">
+          <div class="spec-title">📈 道路随层级平滑缩放 (zlinear 曲线)</div>
+          <p class="spec-desc">Guru Maps 特有的 eval(zlinear(...)) 动态插值，地图放大时线宽无缝平滑过渡。</p>
+
+          <h5 style="color:#93c5fd; font-size:0.8rem; margin:10px 0 6px;">高速公路 (Motorway Width)</h5>
+          <div class="slider-group">
+            <div class="slider-header">
+              <span>远景缩放 (Zoom 6 宽度)</span>
+              <span class="slider-val" id="val-motorway-z6">1.5 pt</span>
+            </div>
+            <input type="range" class="range-slider" id="slider-motorway-z6" min="1.0" max="3.0" step="0.5" value="1.5">
+          </div>
+          <div class="slider-group">
+            <div class="slider-header">
+              <span>特写缩放 (Zoom 14 宽度)</span>
+              <span class="slider-val" id="val-motorway-z14">5.0 pt</span>
+            </div>
+            <input type="range" class="range-slider" id="slider-motorway-z14" min="3.0" max="9.0" step="0.5" value="5.0">
+          </div>
+
+          <h5 style="color:#93c5fd; font-size:0.8rem; margin:10px 0 6px;">主干道路 (Primary Road Width)</h5>
+          <div class="slider-group">
+            <div class="slider-header">
+              <span>远景缩放 (Zoom 8 宽度)</span>
+              <span class="slider-val" id="val-primary-z8">1.5 pt</span>
+            </div>
+            <input type="range" class="range-slider" id="slider-primary-z8" min="1.0" max="3.0" step="0.5" value="1.5">
+          </div>
+          <div class="slider-group">
+            <div class="slider-header">
+              <span>特写缩放 (Zoom 14 宽度)</span>
+              <span class="slider-val" id="val-primary-z14">4.0 pt</span>
+            </div>
+            <input type="range" class="range-slider" id="slider-primary-z14" min="2.5" max="7.0" step="0.5" value="4.0">
+          </div>
+
+          <h5 style="color:#93c5fd; font-size:0.8rem; margin:10px 0 6px;">徒步小路与土路 (Path/Track Width)</h5>
+          <div class="slider-group">
+            <div class="slider-header">
+              <span>特写缩放 (Zoom 15 宽度)</span>
+              <span class="slider-val" id="val-path-z15">3.0 pt</span>
+            </div>
+            <input type="range" class="range-slider" id="slider-path-z15" min="1.5" max="6.0" step="0.5" value="3.0">
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Tab 3: Live MapCSS Code Inspector -->
+    <div class="tab-content" id="tab-code">
+      <div class="code-preview-container">
+        <div class="code-header-bar">
+          <span class="code-title">实时生成的 MapCSS 规则代码</span>
+          <button class="btn-copy" id="btn-copy-code">📋 一键复制代码</button>
+        </div>
+        <pre class="code-block" id="code-preview-block">// 正在动态生成 MapCSS 代码...</pre>
+      </div>
+    </div>
+
+    <!-- Actions & Export -->
+    <div class="sidebar-footer">
+      <div class="style-name-row">
+        <input type="text" class="style-name-input" id="style-name-input" value="CustomOutdoor" placeholder="样式包名称 (如 Custom)" />
+        <span style="font-size:0.85rem; color:#9ca3af;">.style</span>
+      </div>
+      <button class="btn-primary" id="btn-export">
+        <span>⬇️ 一键导出 .style 压缩包</span>
+      </button>
+      <div class="footer-btn-row">
+        <button class="btn-secondary" id="btn-reset">
+          <span>🔄 恢复默认</span>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Right Main Area: MapLibre Viewport -->
+  <main id="map-viewport">
+    <div id="map"></div>
+
+    <!-- Quick Viewpoints Floating Bar -->
+    <div class="map-floating-bar" id="location-chips">
+      <!-- Dynamically populated from app.js -->
+    </div>
+
+    <!-- Maputnik-style Feature Inspector Floating Panel -->
+    <div class="inspector-card" id="feature-inspector-card">
+      <div class="inspector-header">
+        <div class="inspector-header-title">
+          <span>🔍 要素识别器</span>
+        </div>
+        <div class="inspector-header-actions">
+          <button class="inspector-btn-copy" id="btn-copy-inspect" title="复制当前点击处的全部图层与OSM属性">📋 复制属性</button>
+          <button class="inspector-btn-close" id="btn-close-inspect" title="关闭面板">&times;</button>
+        </div>
+      </div>
+      <div class="inspector-body" id="inspector-body">
+        <!-- Populated on map click -->
+      </div>
+    </div>
+
+    <!-- Real-time Map Info Badge -->
+    <div class="map-info-badge" id="map-zoom-badge">
+      ⚡ 本地高精离线样本 | Zoom: 12.8
+    </div>
+  </main>
+
+  <!-- Export Guide Modal -->
+  <div class="modal-backdrop" id="help-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>🎉 样式包已生成并下载！</h3>
+        <button class="modal-close-btn" id="btn-modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>你下载的文件为 <code><span id="export-folder-name">Custom.style</span>.zip</code>。</p>
+        
+        <h4>📱 iOS 安装方法：</h4>
+        <ol>
+          <li>解压该 zip 文件，得到 <code>.style</code> 文件夹。</li>
+          <li>将手机连接电脑（访达/iTunes）或通过隔空投送/“文件”App，移动到 <code>我的 iPhone -> Guru Maps</code> 目录。</li>
+          <li>打开 Guru Maps，点击右侧图层按钮，在样式列表中直接勾选即可！</li>
+        </ol>
+
+        <h4>🤖 Android 安装方法：</h4>
+        <ol>
+          <li>解压该 zip 文件，得到 <code>.style</code> 文件夹。</li>
+          <li>用文件管理器复制到：<code>Android/data/com.galileo_app.maps/files/</code>。</li>
+          <li>打开 Guru Maps 图层设置切换应用。</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="presets.js?v=5"></script>
+  <script src="app.js?v=5"></script>
+</body>
+</html>
