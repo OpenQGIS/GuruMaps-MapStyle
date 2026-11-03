@@ -4,9 +4,18 @@
 
 ---
 
-## 🚀 快速启动可视化编辑器
+## 🌐 在线网页版直接打开 (GitHub Pages)
 
-编辑器基于全球公开免费的 OpenStreetMap 矢量瓦片驱动，**无需准备任何本地瓦片数据**，开箱即用：
+无需安装任何环境，直接在浏览器打开在线工作台：
+👉 **[https://openqgis.github.io/GuruMaps-MapStyle/](https://openqgis.github.io/GuruMaps-MapStyle/)**
+
+> **同一套代码自适应双模式**：
+> - **在线网页模式（GitHub Pages / 任意静态托管）**：自动直连 OpenFreeMap 全球 OpenStreetMap 公共矢量瓦片源，配合本地系统字库（`localIdeographFontFamily`）零延迟渲染中文地名。
+> - **本地极速缓存模式（`run_editor.py`）**：自动启用本地磁盘 `.pbf` 矢量瓦片缓存代理（`/tiles/{z}/{x}/{y}.pbf`），二次浏览毫秒级直出。
+
+---
+
+## 🚀 本地启动可视化编辑器
 
 ### Windows 用户：
 直接双击运行根目录下的：
@@ -19,7 +28,7 @@ start_editor.bat
 ```bash
 python3 run_editor.py
 ```
-> 运行后会自动启动本地服务并在默认浏览器打开 `http://localhost:8080/editor/index.html`。
+> 运行后会自动启动本地多线程瓦片缓存服务并在浏览器打开 `http://localhost:8080/editor/index.html`。
 
 ---
 

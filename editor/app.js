@@ -401,20 +401,36 @@ function normalizeHex(hex) {
   return h;
 }
 
-// Build Real OpenStreetMap Vector Tile Style (OpenMapTiles Schema via Local Caching Proxy)
+// Build Real OpenStreetMap Vector Tile Style
+// Automatically adapts between Local Python Caching Server (localhost:8080-8082) and Online Static Web (GitHub Pages / CDN)
 function buildRealOSMVectorStyle() {
   const origin = window.location.origin;
-  return {
-    version: 8,
-    name: "Guru Maps Real OSM Vector Style",
-    glyphs: `${origin}/editor/fonts/{fontstack}/{range}.pbf`,
-    sources: {
-      "openmaptiles": {
+  const host = window.location.hostname;
+  const port = window.location.port;
+  const isLocalProxy = (host === "localhost" || host === "127.0.0.1") && ["8080", "8081", "8082"].includes(port);
+
+  const glyphsUrl = isLocalProxy
+    ? `${origin}/editor/fonts/{fontstack}/{range}.pbf`
+    : "https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf";
+
+  const openmaptilesSource = isLocalProxy
+    ? {
         type: "vector",
         tiles: [`${origin}/tiles/{z}/{x}/{y}.pbf`],
         minzoom: 0,
         maxzoom: 14
       }
+    : {
+        type: "vector",
+        url: "https://tiles.openfreemap.org/planet"
+      };
+
+  return {
+    version: 8,
+    name: "Guru Maps Real OSM Vector Style",
+    glyphs: glyphsUrl,
+    sources: {
+      "openmaptiles": openmaptilesSource
     },
     layers: [
       {
